@@ -260,6 +260,27 @@ class PyTestRailPlugin(object):
                 self.close_test_run(self.testrun_id)
             elif self.close_on_complete and self.testplan_id:
                 self.close_test_plan(self.testplan_id)
+                
+        # list of failed cases
+        failed_cases = [test_entity['case_id'] for test_entity in self.results if test_entity['status_id'] == 5] 
+
+        # get results for failed cases from testrail
+        results_for_failed_cases = [self.client.send_get(f'get_results_for_case/{self.testrun_id}/{failed_case}')
+                                   for failed_case in failed_cases] 
+        
+        # create list of failed results ids
+        failed_results_ids = []
+        for results in results_for_failed_cases:
+            [failed_results_ids.append(result['id']) for result in results if result['status_id'] == 5]
+       
+        #attach failed results screenshots
+        response = [self.client.add_attachmen(f'add_attachment_to_result/{result_id}',
+                                              fr'C:\Users\79773\PycharmProjects\Python_sandbox\screenshot\C{case_id}.png')
+                    for result_id, case_id in zip(failed_results_ids,failed_cases)]  
+        
+        error = self.client.get_error(response)
+        if error:
+            print('[{}] Info: Screenshot not published for following reason: "{}"'.format(TESTRAIL_PREFIX, error))
         print('[{}] End publishing'.format(TESTRAIL_PREFIX))
 
     # plugin
