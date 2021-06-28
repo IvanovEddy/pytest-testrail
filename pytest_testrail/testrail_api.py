@@ -136,3 +136,24 @@ class APIClient:
         """
         if 'error' in json_response and json_response['error']:
             return json_response['error']
+    def add_attachmen(self, uri, data, **kwargs):
+        """Add attachment to something
+        :param uri: The API method to call including parameters (e.g. get_case/1)
+        :type uri: str
+        :param data: Full path to file
+        :type data:str
+        """
+        cert_check = kwargs.get('cert_check', self.cert_check)
+        headers = kwargs.get('headers')
+        url = self._url + uri
+        files = {'attachment': (open(data, 'rb'))}
+        r = requests.post(
+            url,
+            auth=(self.user, self.password),
+            headers=headers,
+            files=files,
+            verify=cert_check,
+            timeout=self.timeout
+        )
+        files['attachment'].close()
+        return r.json()
